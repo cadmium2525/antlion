@@ -6,18 +6,24 @@ export function formatLen(mm) {
   return `${(mm / 1000).toFixed(mm < 10000 ? 2 : 1)}m`;
 }
 
-// スコアから羽化したウスバカゲロウの翼開長(cm)を決める
-export function wingspanCm(score) {
-  return Math.max(4, 1.2 * Math.pow(Math.max(score, 1), 0.38));
+// 体長に対するスコアの良さ（コンボやタイムボーナス）で 0.75〜1.5 倍
+export function wingFactor(score, bodyMm) {
+  const e = Math.max(score, 1) / ((bodyMm / 4) * 700);
+  return Math.min(1.5, Math.max(0.75, Math.pow(e, 0.3)));
+}
+
+// 羽化したウスバカゲロウの翼開長(cm)。本物も幼虫の体長の数倍の翼をもつ
+export function wingspanCm(score, bodyMm) {
+  return (bodyMm * 4 * wingFactor(score, bodyMm)) / 10;
 }
 
 const RANKS = [
-  [9, 'ふつうのウスバカゲロウ'],
-  [20, 'りっぱなウスバカゲロウ'],
-  [50, 'ハト級ウスバカゲロウ'],
-  [120, 'イヌ級ウスバカゲロウ'],
-  [250, 'ゾウ級ウスバカゲロウ'],
-  [400, '恐竜級ウスバカゲロウ'],
+  [15, 'ふつうのウスバカゲロウ'],
+  [50, 'りっぱなウスバカゲロウ'],
+  [150, 'ネコ級ウスバカゲロウ'],
+  [600, 'ウマ級ウスバカゲロウ'],
+  [1500, 'ゾウ級ウスバカゲロウ'],
+  [4000, '恐竜級ウスバカゲロウ'],
   [Infinity, '伝説の怪獣ウスバカゲロウ'],
 ];
 export function rankOf(ws) {
@@ -155,7 +161,7 @@ export function drawCard(d) {
   g.fill();
 
   // 翼開長が大きいほど大きく描く
-  const t = Math.min(1, Math.max(0, Math.log(d.ws / 5) / Math.log(450 / 5)));
+  const t = Math.min(1, Math.max(0, Math.log(d.ws / 5) / Math.log(5000 / 5)));
   drawLacewing(g, 330, 210 + (1 - t) * 50, 150 + 140 * t);
 
   // 右側の情報パネル
@@ -196,12 +202,13 @@ export function drawCard(d) {
 
   const rows = [
     ['到達ラウンド', d.cleared ? '全5ラウンド制覇' : `ROUND ${d.round} / 5`],
+    ['アリジゴクの体長', formatLen(d.bodyMm)],
     ['食べた獲物', `${d.eaten}匹（最大コンボ ${d.maxCombo}）`],
     ['いちばん大きな獲物', d.biggest],
   ];
   g.font = `800 20px ${FONT}`;
   rows.forEach(([k, v], i) => {
-    const y = 482 + i * 34;
+    const y = 470 + i * 31;
     g.textAlign = 'left';
     g.fillStyle = '#7a6040';
     g.fillText(k, 700, y);

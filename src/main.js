@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { createWorld, PIT_DEPTH } from './world.js';
 import { PREY_TYPES, createPrey } from './prey.js';
 import { buildAntlion, buildLacewing } from './creatures.js';
-import { drawCard, wingspanCm, rankOf, formatLen } from './card.js';
+import { drawCard, wingspanCm, wingFactor, rankOf, formatLen } from './card.js';
 import { sfx, unlockAudio, isMuted, setMuted } from './audio.js';
 
 // ---------- 調整用の数値（仮） ----------
@@ -212,7 +212,7 @@ const game = {
   round: 0, time: 0, stateT: 0,
   s: S0, sDisp: S0, roundStartS: S0,
   score: 0, combo: 0, maxCombo: 0, lastEat: -10, eaten: 0, biggest: null,
-  spawnT: 0, spawnR: 30, shake: 0, clock: 0, cleared: false, card: null,
+  spawnT: 0, viewC: { x: 0, z: 0 }, viewHalf: 10, shake: 0, clock: 0, cleared: false, card: null,
 };
 let prey = [];
 const impacts = [];
@@ -256,10 +256,16 @@ function spawnTick(dt) {
   const [g0, g1] = ratio < 0.35 ? [5, 12] : type.group;
   const n = Math.min(MAX_PREY - prey.length, g0 + Math.floor(Math.random() * (g1 - g0 + 1)));
 
-  const a = Math.random() * Math.PI * 2;
-  const R = game.spawnR + type.size * 0.6;
-  const sx = Math.cos(a) * R, sz = Math.sin(a) * R;
-  const ta = Math.random() * Math.PI * 2, tr = s * PIT_K * (0.3 + Math.random() * 2.2);
+  // 画面の縁のすぐ外から出して、画面内を横切らせる
+  const v = Math.random() * 2 - 1, u = Math.floor(Math.random() * 4);
+  const e = groundAtNdc(u < 2 ? (u ? 1 : -1) : v, u < 2 ? v : (u === 2 ? 1 : -1));
+  if (!e) return;
+  const k = s / game.sDisp, c = game.viewC;
+  let ox = e.x - c.x, oz = e.z - c.z;
+  const ol = Math.hypot(ox, oz) || 1;
+  const sx = e.x * k + (ox / ol) * type.size * 0.9, sz = e.z * k + (oz / ol) * type.size * 0.9;
+  const ta = Math.random() * Math.PI * 2;
+  const tr = Math.min(s * PIT_K * (0.3 + Math.random() * 2.2), game.viewHalf * k * (0.15 + Math.random() * 0.7));
   let dx = Math.cos(ta) * tr - sx, dz = Math.sin(ta) * tr - sz;
   const dl = Math.hypot(dx, dz);
   dx /= dl;
@@ -382,7 +388,11 @@ function updatePrey(p, dt) {
       p.bar = null;
     }
 
-    if (d > game.spawnR * 1.3 + p.size && p.x * p.dx + p.z * p.dz > 0) removePrey(p);
+    // 画面の外へ歩き去ったら消す
+    tmpV.set(p.x, y, p.z).project(camera);
+    const margin = 1.15 + p.size / game.viewHalf;
+    const away = (p.x - game.viewC.x) * p.dx + (p.z - game.viewC.z) * p.dz > 0;
+    if (away && (Math.abs(tmpV.x) > margin || Math.abs(tmpV.y) > margin)) removePrey(p);
   } else if (p.state === 'fall') {
     p.t += dt;
     const k = Math.min(1, p.t / p.dur);
@@ -513,6 +523,7 @@ function timeUp() {
 
 function startEmerge(cleared) {
   game.cleared = cleared;
+  game.wing = 2.4 * wingFactor(game.score, game.s * UNIT_MM);
   setState('emerge');
   ui.hud.classList.add('hidden');
   ui.combo.classList.remove('show');
@@ -528,10 +539,10 @@ function startEmerge(cleared) {
 
 function showResult() {
   game.state = 'result';
-  const ws = wingspanCm(game.score);
+  const ws = wingspanCm(game.score, game.s * UNIT_MM);
   const rank = rankOf(ws);
   const data = {
-    score: game.score, ws, rank, eaten: game.eaten, maxCombo: game.maxCombo,
+    score: game.score, ws, rank, eaten: game.eaten, maxCombo: game.maxCombo, bodyMm: game.s * UNIT_MM,
     biggest: game.biggest ? game.biggest.name : 'なし', round: game.round + 1, cleared: game.cleared,
   };
   game.result = data;
@@ -591,16 +602,23 @@ function camDist(sd) {
   return sd * 8.5 * (asp < 1 ? Math.pow(1 / asp, 0.55) : 1);
 }
 
-function updateSpawnRadius() {
-  // 画面の四隅から地面までの距離で、画面外ぎりぎりの出現半径を決める
-  let max = 0;
-  for (const [x, y] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
-    ndc.set(x, y);
-    raycaster.setFromCamera(ndc, camera);
-    const p = raycaster.ray.intersectPlane(groundPlane, tmpV);
-    max = Math.max(max, p ? Math.hypot(p.x, p.z) : camDist(game.sDisp) * 2);
+function groundAtNdc(x, y) {
+  ndc.set(x, y);
+  raycaster.setFromCamera(ndc, camera);
+  return raycaster.ray.intersectPlane(groundPlane, new THREE.Vector3());
+}
+
+function updateView() {
+  // 画面中央の地面の位置と、そこから画面の縁までの最短距離
+  const c = groundAtNdc(0, 0);
+  if (!c) return;
+  game.viewC = c;
+  let min = Infinity;
+  for (const [x, y] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+    const p = groundAtNdc(x, y);
+    if (p) min = Math.min(min, Math.hypot(p.x - c.x, p.z - c.z));
   }
-  game.spawnR = max * (game.s / game.sDisp) * 1.05;
+  game.viewHalf = min;
 }
 
 function updateCamera(dt) {
@@ -615,7 +633,7 @@ function updateCamera(dt) {
       wantLook.set(0, -PIT_DEPTH * pitR(), 0);
     } else {
       const L = lacewing.root.position;
-      const k = dist / (sd * 8.5);
+      const k = (dist / (sd * 8.5)) * (game.wing / 1.6);
       wantPos.set(0, L.y + sd * 4.5 * k, L.z + sd * 5.5 * k);
       wantLook.set(0, L.y, L.z);
     }
@@ -697,8 +715,8 @@ function update(dt) {
 
   if (game.state === 'emerge' || game.state === 'result') updateEmerge(dt);
   else {
+    updateView();
     spawnTick(dt);
-    updateSpawnRadius();
   }
 
   for (let i = impacts.length - 1; i >= 0; i--) {
@@ -733,7 +751,7 @@ function updateEmerge(dt) {
   } else if (!lacewing.root.visible) {
     antlion.root.visible = false;
     lacewing.root.visible = true;
-    lacewing.root.scale.setScalar(sd * 1.6);
+    lacewing.root.scale.setScalar(sd * game.wing);
     lacewing.root.position.set(0, m.y, 0);
     puff(0, m.y, 0, 60, sd * 4, sd * 5);
     game.shake = 0.6;
@@ -770,4 +788,4 @@ function frame(now) {
 requestAnimationFrame(frame);
 
 // 動作確認用
-window.__antlion = { game, get prey() { return prey; }, throwSandAt, ROUNDS };
+window.__antlion = { game, get prey() { return prey; }, throwSandAt, ROUNDS, camera };
