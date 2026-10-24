@@ -799,4 +799,4 @@ function frame(now) {
 requestAnimationFrame(frame);
 
 // 動作確認用
-window.__antlion = { game, get prey() { return prey; }, throwSandAt, ROUNDS, camera };
+window.__antlion = { game, get prey() { return prey; }, throwSandAt, clearPrey, ROUNDS, camera };

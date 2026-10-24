@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "name": "アリジゴク巨大化ゲーム PV",
+  "width": 1080, "height": 1920, "fps": 30,
+  "background": "#1c1534",
+  "fadeOut": 0.5,
+  "media": {
+    "r1": { "name": "s1_r1.mp4" },
+    "r3": { "name": "s2_r3.mp4" },
+    "r4": { "name": "s3_r4.mp4" },
+    "r5": { "name": "s4_r5.mp4" },
+    "em": { "name": "s5_emerge.mp4" },
+    "card": { "name": "card.png" },
+    "bgm": { "name": "bgm.wav" }
+  },
+  "clips": [
+    { "media": "r1", "in": 0, "out": 3.75 },
+    { "media": "r3", "in": 0.4, "out": 4.15 },
+    { "media": "r4", "in": 0.8, "out": 4.55 },
+    { "media": "r5", "in": 0.3, "out": 4.05 },
+    { "media": "em", "in": 1.925, "out": 5.675 },
+    { "media": "card", "in": 0, "out": 2.75, "fit": "contain", "kenburns": true },
+    { "media": "r5", "in": 1.5, "out": 4.375, "filter": { "brightness": 0.75, "contrast": 1, "saturation": 1.1 } }
+  ],
+  "texts": [
+    { "text": "アリジゴクになって", "start": 0.25, "end": 1.85, "style": "pop", "y": 0.74, "size": 0.085 },
+    { "text": "砂をかけて\n食べまくれ！", "start": 1.9, "end": 3.7, "style": "yellow", "y": 0.74, "size": 0.09 },
+    { "text": "食べるほど\n巨大化！", "start": 3.8, "end": 7.4, "style": "pop3d", "y": 0.74, "size": 0.1 },
+    { "text": "ゾウにも\n砂をかけまくれ！", "start": 7.55, "end": 11.2, "style": "yellow", "y": 0.74, "size": 0.09 },
+    { "text": "ついには\n恐竜まで！？", "start": 11.3, "end": 14.95, "style": "pop3d", "y": 0.74, "size": 0.1 },
+    { "text": "そして――", "start": 15.05, "end": 16.8, "style": "elegant", "y": 0.72, "size": 0.085, "anim": "fade" },
+    { "text": "羽化！！", "start": 16.9, "end": 18.7, "style": "gold", "y": 0.72, "size": 0.15 },
+    { "text": "結果カードをXでシェア！", "start": 18.85, "end": 21.45, "style": "label", "y": 0.27, "size": 0.06 },
+    { "text": "あなたは\n何メートルになれる？", "start": 19.1, "end": 21.45, "style": "telop", "y": 0.74, "size": 0.085 },
+    { "text": "アリジゴク\n巨大化ゲーム", "start": 21.6, "end": 24.4, "style": "gold", "y": 0.38, "size": 0.14 },
+    { "text": "ブラウザですぐ遊べる！", "start": 21.9, "end": 24.4, "style": "yellow", "y": 0.58, "size": 0.075 },
+    { "text": "cadmium2525.github.io/antlion", "start": 22.2, "end": 24.4, "style": "subtitle", "y": 0.68, "size": 0.045 }
+  ],
+  "effects": [
+    { "type": "shake", "start": 15.0, "end": 16.85, "intensity": 0.35 },
+    { "type": "flash", "start": 16.8, "end": 17.3, "intensity": 0.9 },
+    { "type": "sparkle", "start": 16.9, "end": 18.75, "intensity": 0.5 },
+    { "type": "sparkle", "start": 18.75, "end": 21.5, "intensity": 0.7 },
+    { "type": "flash", "start": 18.7, "end": 19.0, "intensity": 0.5 },
+    { "type": "blur", "start": 21.5, "end": 24.4, "intensity": 0.6 },
+    { "type": "confetti", "start": 21.6, "end": 24.4, "intensity": 0.5 }
+  ],
+  "audios": [
+    { "media": "bgm", "start": 0, "volume": 1, "fadeIn": 0, "fadeOut": 0.4 }
+  ]
+}
