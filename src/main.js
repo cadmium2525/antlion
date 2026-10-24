@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { createWorld, PIT_DEPTH } from './world.js';
 import { PREY_TYPES, createPrey } from './prey.js';
 import { buildAntlion, buildLacewing } from './creatures.js';
-import { drawCard, wingspanCm, wingFactor, rankOf, formatLen } from './card.js';
+import { drawCard, wingspanCm, wingFactor, rankOf, rankIndex, STYLES, formatLen } from './card.js';
 import { sfx, unlockAudio, isMuted, setMuted } from './audio.js';
 
 // ---------- 調整用の数値（仮） ----------
@@ -524,6 +524,7 @@ function timeUp() {
 function startEmerge(cleared) {
   game.cleared = cleared;
   game.wing = 2.4 * wingFactor(game.score, game.s * UNIT_MM);
+  lacewing.setWingColor(...STYLES[rankIndex(wingspanCm(game.score, game.s * UNIT_MM))].wing3d);
   setState('emerge');
   ui.hud.classList.add('hidden');
   ui.combo.classList.remove('show');

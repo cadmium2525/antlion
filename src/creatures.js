@@ -139,6 +139,10 @@ export function buildLacewing() {
   let time = 0;
   return {
     root,
+    setWingColor(color, emissive) {
+      wingMat.color.setHex(color);
+      wingMat.emissive.setHex(emissive);
+    },
     update(dt, speed = 10) {
       time += dt;
       for (const { flap, ph } of wings) flap.rotation.z = Math.sin(time * speed - ph) * 0.65 + 0.15;
