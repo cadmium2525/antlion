@@ -9,7 +9,7 @@ import { sfx, unlockAudio, isMuted, setMuted } from './audio.js';
 const S0 = 1.5; // 初期体長（アリ=1）
 const PIT_K = 2.1; // 巣穴の半径 / 体長
 const SPLASH_K = 0.75; // 砂の着弾半径 / 体長
-const GROW_K = 0.032; // 成長率
+const GROW_K = 0.022; // 成長率
 const SPEED = 1.5; // 獲物の移動速度の倍率
 const MAX_PREY = 42;
 const UNIT_MM = 4; // 体長1あたりのmm
@@ -20,7 +20,7 @@ const ROUNDS = [
   { name: '草むらの住人', sub: 'カエル・トカゲ・ネズミ', target: 30, time: 40 },
   { name: '里山のけものたち', sub: 'ウサギ・ネコ・タヌキ・イヌ', target: 130, time: 40 },
   { name: '牧場とサバンナ', sub: 'ブタ・ウシ・ウマ・ゾウ', target: 550, time: 40 },
-  { name: '太古の大地', sub: '恐竜たち', target: 2500, time: 45 },
+  { name: '太古の大地', sub: '恐竜たち', time: 45, final: true }, // 最終ラウンドは時間いっぱいまで
 ];
 
 // 自分より大きい獲物ほど多くの砂が必要
@@ -196,8 +196,12 @@ function popup(text, x, y, z, big) {
   ui.fx.appendChild(el);
 }
 
+// 絵文字だと端末によって中心がずれるので SVG で描く
+const SPEAKER = '<path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/>';
+const WAVES = '<path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>';
+const CROSS = '<path d="M16.5 9.5l5 5M21.5 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>';
 function updateMuteIcon() {
-  ui.mute.textContent = isMuted() ? '🔇' : '🔊';
+  ui.mute.innerHTML = `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">${SPEAKER}${isMuted() ? CROSS : WAVES}</svg>`;
 }
 updateMuteIcon();
 ui.mute.addEventListener('click', () => {
@@ -503,7 +507,8 @@ function startRound(i) {
   game.time = ROUNDS[i].time;
   setState('intro');
   const r = ROUNDS[i];
-  banner(`<div class="b1">ROUND ${i + 1}</div><div class="b2">${r.name}</div><div class="b3">目標：体長 ${formatLen(r.target * UNIT_MM)}</div>`, 1.8);
+  const goal = r.final ? 'FINAL：時間いっぱい食べて大きくなれ！' : `目標：体長 ${formatLen(r.target * UNIT_MM)}`;
+  banner(`<div class="b1">ROUND ${i + 1}</div><div class="b2">${r.name}</div><div class="b3">${goal}</div>`, 1.8);
 }
 
 function roundClear() {
@@ -517,8 +522,13 @@ function roundClear() {
 
 function timeUp() {
   setState('timeup');
-  sfx.timeup();
-  banner('<div class="b1">タイムアップ</div><div class="b2">羽化のときが来た…</div>', 1.8);
+  if (ROUNDS[game.round].final) {
+    sfx.clear();
+    banner('<div class="b1">FINISH!</div><div class="b2">いよいよ羽化のとき…</div>', 1.8);
+  } else {
+    sfx.timeup();
+    banner('<div class="b1">タイムアップ</div><div class="b2">羽化のときが来た…</div>', 1.8);
+  }
 }
 
 function startEmerge(cleared) {
@@ -660,7 +670,7 @@ let lastHud = '';
 function updateHud() {
   if (game.state === 'title' || game.state === 'emerge' || game.state === 'result') return;
   const r = ROUNDS[game.round];
-  const prog = Math.min(1, Math.log(game.s / game.roundStartS) / Math.log(r.target / game.roundStartS));
+  const prog = r.final ? 1 : Math.min(1, Math.log(game.s / game.roundStartS) / Math.log(r.target / game.roundStartS));
   const key = [game.round, game.score, Math.ceil(game.time), game.s.toFixed(2)].join('|');
   if (key !== lastHud) {
     lastHud = key;
@@ -668,7 +678,7 @@ function updateHud() {
     ui.score.textContent = game.score.toLocaleString('ja-JP');
     ui.timeText.textContent = Math.ceil(game.time);
     ui.size.textContent = `体長 ${formatLen(game.s * UNIT_MM)}`;
-    ui.goal.textContent = `目標 ${formatLen(r.target * UNIT_MM)}`;
+    ui.goal.textContent = r.final ? 'FINAL：食べ放題！' : `目標 ${formatLen(r.target * UNIT_MM)}`;
     ui.growFill.style.width = `${Math.max(0, prog) * 100}%`;
   }
   ui.timeFill.style.width = `${(game.time / r.time) * 100}%`;
@@ -694,7 +704,7 @@ function update(dt) {
       break;
     case 'play':
       game.time = Math.max(0, game.time - dt);
-      if (game.s >= ROUNDS[game.round].target) roundClear();
+      if (!ROUNDS[game.round].final && game.s >= ROUNDS[game.round].target) roundClear();
       else if (game.time <= 0) timeUp();
       break;
     case 'clear':
@@ -704,7 +714,7 @@ function update(dt) {
       }
       break;
     case 'timeup':
-      if (game.stateT > 1.8) startEmerge(false);
+      if (game.stateT > 1.8) startEmerge(!!ROUNDS[game.round].final);
       break;
   }
 
