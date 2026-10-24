@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <title>アリジゴク巨大化ゲーム</title>
+  <meta name="description" content="アリジゴクになって獲物に砂をかけ、巣穴へ落として食べよう。アリからゾウ、恐竜まで食べて巨大化し、最後は羽化！">
+  <meta property="og:title" content="アリジゴク巨大化ゲーム">
+  <meta property="og:description" content="アリから恐竜まで。砂をかけて食べて巨大化するブラウザゲーム">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="theme-color" content="#e9d7ae">
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">{ "imports": { "three": "./lib/three.module.min.js" } }</script>
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div id="hud" class="hidden">
+    <div class="hud-row">
+      <div class="pill" id="roundLabel">ROUND 1/5</div>
+      <div class="pill score"><span class="lbl">SCORE</span><span id="scoreVal">0</span></div>
+    </div>
+    <div class="bar time"><div id="timeFill"></div><span id="timeText">40</span></div>
+    <div class="grow">
+      <div class="grow-labels"><span id="sizeText">体長 6.0mm</span><span id="goalText">目標 2.4cm</span></div>
+      <div class="bar growbar"><div id="growFill"></div></div>
+    </div>
+  </div>
+  <button id="muteBtn" class="icon-btn" aria-label="音のオン・オフ">🔊</button>
+  <div id="combo"></div>
+  <div id="fx"></div>
+  <div id="banner"></div>
+
+  <div id="titleScreen" class="screen">
+    <div class="panel">
+      <h1>アリジゴク<br><span>巨大化ゲーム</span></h1>
+      <p class="lead">砂をかけて獲物を巣穴へ。<br>食べるほど、大きくなる。</p>
+      <ul class="howto">
+        <li><b>タップ / クリック</b>した場所に砂を飛ばす</li>
+        <li>自分より<b>大きい獲物</b>は何度も砂をかけよう</li>
+        <li>制限時間内に<b>目標の体長</b>まで育つと次のラウンドへ</li>
+        <li>全5ラウンドをクリアして<b>羽化</b>しよう</li>
+      </ul>
+      <button id="startBtn" class="btn primary">はじめる</button>
+      <p class="hi" id="hiText"></p>
+    </div>
+  </div>
+
+  <div id="resultScreen" class="screen hidden">
+    <div class="panel result">
+      <h2 id="resultTitle">羽化成功！</h2>
+      <img id="cardImg" alt="結果カード">
+      <p class="note">画像を保存して、Xの投稿に添付してね</p>
+      <div class="btns">
+        <button id="saveBtn" class="btn">画像を保存</button>
+        <button id="postBtn" class="btn x">𝕏 に投稿</button>
+      </div>
+      <button id="retryBtn" class="btn primary">もう一度あそぶ</button>
+    </div>
+  </div>
+
+  <noscript>このゲームを遊ぶにはJavaScriptを有効にしてください。</noscript>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
